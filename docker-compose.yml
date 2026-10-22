@@ -1,0 +1,48 @@
+name: rootkit
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rootkit
+      POSTGRES_PASSWORD: rootkit
+      POSTGRES_DB: rootkit
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rootkit -d rootkit"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build:
+      context: ./web
+      target: migrator
+    environment:
+      DATABASE_URL: postgres://rootkit:rootkit@db:5432/rootkit
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    build:
+      context: ./web
+      target: runner
+    environment:
+      DATABASE_URL: postgres://rootkit:rootkit@db:5432/rootkit
+      AI_API_BASE_URL: ${AI_API_BASE_URL:-http://host.docker.internal:8000/api/v1}
+      AI_API_TOKEN: ${AI_API_TOKEN:-change-me}
+    ports:
+      - "3000:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  pgdata:
