@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: rootkit
       POSTGRES_DB: rootkit
     ports:
-      - "5432:5432"
+      - "5433:5432"  # 로컬 Homebrew Postgres(5432)와 충돌 방지
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -33,10 +33,12 @@ services:
     build:
       context: ./web
       target: runner
+    # JWT_SECRET, AI_API_TOKEN 등 비밀값은 web/.env에서 읽는다
+    env_file: ./web/.env
+    # 컨테이너 내부 주소는 .env(로컬 개발용) 값을 덮어쓴다
     environment:
       DATABASE_URL: postgres://rootkit:rootkit@db:5432/rootkit
-      AI_API_BASE_URL: ${AI_API_BASE_URL:-http://host.docker.internal:8000/api/v1}
-      AI_API_TOKEN: ${AI_API_TOKEN:-change-me}
+      AI_API_BASE_URL: http://host.docker.internal:8000/api/v1
     ports:
       - "3000:3000"
     depends_on:

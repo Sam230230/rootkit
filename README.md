@@ -22,7 +22,16 @@ docker compose up -d --build
 # http://localhost:3000, 헬스체크: http://localhost:3000/api/health
 ```
 
-`migrate` 서비스가 마이그레이션을 적용한 뒤 `web`이 시작됩니다.
+`migrate` 서비스가 마이그레이션과 데모 계정 시드를 마친 뒤 `web`이 시작됩니다.
+
+- 데모 계정: 아이디 `rookie` / 비밀번호 `rootkit1234` (`SEED_LOGIN_ID`, `SEED_PASSWORD`로 변경 가능)
+- DB 호스트 포트는 **5433**입니다. 로컬에 설치된 Postgres(5432)와 충돌하지 않게 하기 위함입니다.
+
+## 인증
+
+아이디/비밀번호 로그인 → JWT(HS256)를 httpOnly 쿠키 `rootkit_session`에 저장(7일).
+`src/proxy.ts`가 `/kits`, `/learn/*`, `/history`, `/api/demo/*`를 보호합니다. 비밀번호는 scrypt로 해시합니다.
+`JWT_SECRET`(32자 이상)이 필요합니다. 로컬은 `web/.env`, Docker는 루트 `.env` 또는 환경변수로 지정하세요.
 
 ## 로컬 개발 (DB만 Docker)
 
@@ -32,6 +41,7 @@ cd web
 cp .env.example .env   # 최초 1회
 pnpm install
 pnpm db:migrate
+pnpm db:seed      # 데모 계정 생성
 pnpm dev
 ```
 

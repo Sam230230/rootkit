@@ -6,12 +6,14 @@ FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
-# 마이그레이션 실행용 (drizzle-kit 포함)
+# 마이그레이션 + 데모 계정 시드 (drizzle-kit 포함)
 FROM deps AS migrator
 COPY drizzle.config.ts ./
 COPY src/db ./src/db
 COPY drizzle ./drizzle
-CMD ["pnpm", "db:migrate"]
+COPY scripts ./scripts
+COPY src/lib/password.ts ./src/lib/password.ts
+CMD ["sh", "-c", "pnpm db:migrate && pnpm db:seed"]
 
 FROM deps AS builder
 COPY . .
